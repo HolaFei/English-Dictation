@@ -99,6 +99,7 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
+import { ElMessage } from 'element-plus'
 import VoiceSettings from './VoiceSettings.vue'
 import SentencePreview from './SentencePreview.vue'
 import CongratulationsModal from './CongratulationsModal.vue'
@@ -154,7 +155,8 @@ const isWordCorrect = (index) => {
 }
 
 // 创建打字音效
-const typeSound = new Audio('/sounds/type.mp3')
+const baseUrl = import.meta.env.BASE_URL
+const typeSound = new Audio(`${baseUrl}sounds/type.mp3`)
 typeSound.volume = 0.6 // 设置音量为30%
 
 // 播放打字音效
@@ -318,13 +320,25 @@ const nextSentence = () => {
 // 处理文件上传
 const handleFileUpload = (event) => {
   const file = event.target.files[0]
-  if (file) {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      fileContent.value = e.target.result
-    }
-    reader.readAsText(file)
+  if (!file) return
+
+  // 检查文件类型
+  if (file.type !== 'text/plain' && !file.name.endsWith('.txt')) {
+    ElMessage({
+      message: '请选择文本文件(.txt)',
+      type: 'warning',
+      duration: 3000,
+    })
+    // 清空文件输入框
+    event.target.value = ''
+    return
   }
+
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    fileContent.value = e.target.result
+  }
+  reader.readAsText(file)
 }
 
 // 更新语音设置
