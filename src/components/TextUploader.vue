@@ -125,7 +125,7 @@ const completedSentences = ref([])
 
 const currentSentenceWords = computed(() => {
   if (!sentences.value[currentSentenceIndex.value]) return []
-  return sentences.value[currentSentenceIndex.value].match(/\b\w+\b|[.,!?;:]/g) || []
+  return sentences.value[currentSentenceIndex.value].match(/\b\w+(?:'\w+)?\b|[.,!?;:]/g) || []
 })
 
 // 检查是否是标点符号
