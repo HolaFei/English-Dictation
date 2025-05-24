@@ -84,23 +84,62 @@
             :key="index"
             class="completed-sentence"
           >
-            <div class="sentence-text">
-              <span
-                v-for="(word, wordIndex) in splitSentence(sentence)"
-                :key="wordIndex"
-                class="word"
-                @click="speakWord(word)"
-                :title="'点击朗读: ' + word"
-                >{{ word }}</span
+            <div class="sentence-content">
+              <div class="sentence-text">
+                <span
+                  v-for="(word, wordIndex) in splitSentence(sentence)"
+                  :key="wordIndex"
+                  class="word"
+                  @click="speakWord(word)"
+                  :title="'点击朗读: ' + word"
+                  >{{ word }}</span
+                >
+              </div>
+              <div
+                class="translation-text"
+                v-if="translations[sentence] && !hiddenTranslations[sentence]"
               >
+                {{ translations[sentence] }}
+              </div>
             </div>
-            <button class="replay-button" @click="replaySentence(sentence)" title="重新朗读此句">
-              <svg viewBox="0 0 24 24" class="replay-icon">
-                <path
-                  d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"
-                />
-              </svg>
-            </button>
+            <div class="sentence-buttons">
+              <button
+                v-if="!translations[sentence]"
+                class="translate-button"
+                @click="translateSentence(sentence)"
+                title="翻译此句"
+              >
+                <svg viewBox="0 0 24 24" class="translate-icon">
+                  <path
+                    d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"
+                  />
+                </svg>
+              </button>
+              <button
+                v-else
+                class="translate-button"
+                @click="toggleTranslation(sentence)"
+                :title="hiddenTranslations[sentence] ? '显示翻译' : '隐藏翻译'"
+              >
+                <svg viewBox="0 0 24 24" class="translate-icon">
+                  <path
+                    v-if="!hiddenTranslations[sentence]"
+                    d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+                  />
+                  <path
+                    v-else
+                    d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"
+                  />
+                </svg>
+              </button>
+              <button class="replay-button" @click="replaySentence(sentence)" title="重新朗读此句">
+                <svg viewBox="0 0 24 24" class="replay-icon">
+                  <path
+                    d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"
+                  />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
         <pre v-if="!isDictating" class="file-content">{{ fileContent }}</pre>
@@ -445,6 +484,39 @@ const speakWord = (word) => {
   utterance.volume = voiceSettings.value.volume
 
   window.speechSynthesis.speak(utterance)
+}
+
+// 存储翻译结果
+const translations = ref({})
+// 存储每个句子的翻译隐藏状态
+const hiddenTranslations = ref({})
+
+// 翻译句子
+const translateSentence = async (sentence) => {
+  try {
+    // 使用 Google Translate API
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=zh-CN&dt=t&q=${encodeURIComponent(sentence)}`
+    const response = await fetch(url)
+    const data = await response.json()
+
+    // 提取翻译结果
+    const translation = data[0][0][0]
+    translations.value[sentence] = translation
+    // 翻译完成后显示翻译
+    hiddenTranslations.value[sentence] = false
+  } catch (error) {
+    console.error('Translation error:', error)
+    ElMessage({
+      message: '翻译失败，请稍后重试',
+      type: 'error',
+      duration: 3000,
+    })
+  }
+}
+
+// 切换翻译显示状态
+const toggleTranslation = (sentence) => {
+  hiddenTranslations.value[sentence] = !hiddenTranslations.value[sentence]
 }
 
 // 页面加载时
@@ -820,6 +892,13 @@ window.addEventListener('beforeunload', () => {
   gap: 10px;
 }
 
+.sentence-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .sentence-text {
   flex: 1;
   line-height: 1.4;
@@ -838,6 +917,12 @@ window.addEventListener('beforeunload', () => {
 .word:hover {
   background-color: #e3f2fd;
   color: #2196f3;
+}
+
+.sentence-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 
 .replay-button {
@@ -859,6 +944,40 @@ window.addEventListener('beforeunload', () => {
 }
 
 .replay-icon {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+.translation-text {
+  color: #666;
+  font-size: 0.9em;
+  padding: 4px 8px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  border-left: 3px solid #2196f3;
+}
+
+.translate-button {
+  padding: 4px;
+  background-color: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #666;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+}
+
+.translate-button:hover {
+  background-color: #f0f0f0;
+  color: #2196f3;
+}
+
+.translate-icon {
   width: 20px;
   height: 20px;
   fill: currentColor;
