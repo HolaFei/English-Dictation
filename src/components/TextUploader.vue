@@ -84,7 +84,14 @@
             :key="index"
             class="completed-sentence"
           >
-            {{ sentence }}
+            <span class="sentence-text">{{ sentence }}</span>
+            <button class="replay-button" @click="replaySentence(sentence)" title="重新朗读此句">
+              <svg viewBox="0 0 24 24" class="replay-icon">
+                <path
+                  d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"
+                />
+              </svg>
+            </button>
           </div>
         </div>
         <pre v-if="!isDictating" class="file-content">{{ fileContent }}</pre>
@@ -395,6 +402,20 @@ const toggleSpeaking = () => {
 // 加载课程内容
 const loadCourseContent = (course) => {
   fileContent.value = course.content
+}
+
+// 重新朗读已完成的句子
+const replaySentence = (sentence) => {
+  const utterance = new SpeechSynthesisUtterance(sentence)
+
+  if (voiceSettings.value.voice) {
+    utterance.voice = voiceSettings.value.voice
+  }
+  utterance.rate = voiceSettings.value.rate
+  utterance.pitch = voiceSettings.value.pitch
+  utterance.volume = voiceSettings.value.volume
+
+  window.speechSynthesis.speak(utterance)
 }
 
 // 页面加载时
@@ -764,5 +785,38 @@ window.addEventListener('beforeunload', () => {
   background-color: white;
   border-radius: 4px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.sentence-text {
+  flex: 1;
+  line-height: 1.4;
+}
+
+.replay-button {
+  padding: 4px;
+  background-color: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #666;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.replay-button:hover {
+  background-color: #f0f0f0;
+  color: #2196f3;
+}
+
+.replay-icon {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
 }
 </style>
