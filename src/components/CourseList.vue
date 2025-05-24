@@ -2,7 +2,7 @@
   <div class="course-list">
     <h3>听力素材</h3>
     <div v-for="(courses, category) in courseList" :key="category" class="category">
-      <div class="category-name">{{ category }}</div>
+      <div class="category-name">{{ formatCourseName(category) }}</div>
       <div class="course-items">
         <div
           v-for="course in courses"
@@ -11,7 +11,7 @@
           :class="{ active: selectedCourse === course.path }"
           @click="selectCourse(course)"
         >
-          {{ course.name }}
+          {{ formatCourseName(course.name) }}
         </div>
       </div>
     </div>
@@ -25,6 +25,11 @@ const courseList = ref({})
 const selectedCourse = ref('')
 
 const emit = defineEmits(['select-course'])
+
+// 格式化课程名称，将下划线替换为空格
+const formatCourseName = (name) => {
+  return name.replace(/_/g, ' ')
+}
 
 const selectCourse = (course) => {
   selectedCourse.value = course.path
