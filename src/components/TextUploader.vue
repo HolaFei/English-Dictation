@@ -288,11 +288,10 @@ const handleKeyPress = (event) => {
 
 // 开始听写
 const startDictation = () => {
-  // 将文本分割成句子
-  sentences.value = fileContent.value
-    .split(/[.!?]+/)
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0)
+  // 使用正则表达式匹配句子，保留标点符号
+  sentences.value =
+    fileContent.value.match(/[^.!?。！？]+[.!?。！？]/g) ||
+    [].map((s) => s.trim()).filter((s) => s.length > 0)
 
   currentSentenceIndex.value = 0
   currentWordIndex.value = 0
