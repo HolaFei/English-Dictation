@@ -84,7 +84,16 @@
             :key="index"
             class="completed-sentence"
           >
-            <span class="sentence-text">{{ sentence }}</span>
+            <div class="sentence-text">
+              <span
+                v-for="(word, wordIndex) in splitSentence(sentence)"
+                :key="wordIndex"
+                class="word"
+                @click="speakWord(word)"
+                :title="'点击朗读: ' + word"
+                >{{ word }}</span
+              >
+            </div>
             <button class="replay-button" @click="replaySentence(sentence)" title="重新朗读此句">
               <svg viewBox="0 0 24 24" class="replay-icon">
                 <path
@@ -407,6 +416,26 @@ const loadCourseContent = (course) => {
 // 重新朗读已完成的句子
 const replaySentence = (sentence) => {
   const utterance = new SpeechSynthesisUtterance(sentence)
+
+  if (voiceSettings.value.voice) {
+    utterance.voice = voiceSettings.value.voice
+  }
+  utterance.rate = voiceSettings.value.rate
+  utterance.pitch = voiceSettings.value.pitch
+  utterance.volume = voiceSettings.value.volume
+
+  window.speechSynthesis.speak(utterance)
+}
+
+// 将句子分割成单词
+const splitSentence = (sentence) => {
+  // 使用正则表达式匹配单词和标点符号
+  return sentence.match(/\b\w+(?:'\w+)?\b|[.,!?;:]/g) || []
+}
+
+// 朗读单个单词
+const speakWord = (word) => {
+  const utterance = new SpeechSynthesisUtterance(word)
 
   if (voiceSettings.value.voice) {
     utterance.voice = voiceSettings.value.voice
@@ -780,20 +809,35 @@ window.addEventListener('beforeunload', () => {
 }
 
 .completed-sentence {
-  padding: 8px;
-  margin: 5px 0;
+  padding: 12px;
+  margin: 8px 0;
   background-color: white;
   border-radius: 4px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
 }
 
 .sentence-text {
   flex: 1;
   line-height: 1.4;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.word {
+  cursor: pointer;
+  padding: 0 2px;
+  border-radius: 3px;
+  transition: all 0.2s ease;
+}
+
+.word:hover {
+  background-color: #e3f2fd;
+  color: #2196f3;
 }
 
 .replay-button {
