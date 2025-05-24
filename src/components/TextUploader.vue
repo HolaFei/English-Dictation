@@ -1,91 +1,94 @@
 <template>
   <div class="text-uploader">
-    <div class="upload-section" :class="{ 'upload-section--centered': !fileContent }">
-      <input
-        type="file"
-        accept=".txt"
-        @change="handleFileUpload"
-        class="file-input"
-        id="file-input"
-      />
-      <label for="file-input" class="upload-button"> 选择文本文件 </label>
-    </div>
-    <div v-if="fileContent" class="content-section">
-      <div class="content-header">
-        <h3>文件内容：</h3>
-        <div class="button-group">
-          <button
-            @click="toggleSpeaking"
-            class="speak-button"
-            :class="{ 'speak-button--stop': isSpeaking }"
-          >
-            {{ isSpeaking ? '停止朗读' : '朗读文本' }}
-          </button>
-          <button v-if="!isDictating" @click="startDictation" class="dictate-button">
-            开始听写
-          </button>
-          <button
-            v-else
-            @click="nextSentence"
-            class="dictate-button"
-            :disabled="!isCurrentSentenceComplete"
-          >
-            下一句
-          </button>
-          <button
-            v-if="isDictating"
-            @click="speakCurrentSentence"
-            class="repeat-button"
-            :disabled="isSpeaking"
-            title="重复播放当前句子 (Ctrl + ')"
-          >
-            <svg viewBox="0 0 24 24" class="repeat-icon">
-              <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" />
-            </svg>
-          </button>
-          <button @click="showSettings = true" class="settings-button" title="语音设置">
-            <svg viewBox="0 0 24 24" class="settings-icon">
-              <path
-                d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"
-              />
-            </svg>
-          </button>
-        </div>
+    <CourseList @select-course="loadCourseContent" />
+    <div class="content-wrapper">
+      <div class="upload-section" :class="{ 'upload-section--centered': !fileContent }">
+        <input
+          type="file"
+          accept=".txt"
+          @change="handleFileUpload"
+          class="file-input"
+          id="file-input"
+        />
+        <label for="file-input" class="upload-button"> 选择文本文件 </label>
       </div>
-      <div v-if="isDictating" class="dictation-section">
-        <div class="current-sentence">
-          <div
-            v-for="(word, index) in currentSentenceWords"
-            :key="index"
-            class="word-container"
-            :class="{ 'current-word': index === currentWordIndex }"
-          >
-            <div class="input-text" :class="{ correct: isWordCorrect(index) }">
-              {{ isPunctuation(word) ? word : userInput[index] || '' }}
+      <div v-if="fileContent" class="content-section">
+        <div class="content-header">
+          <h3>文件内容：</h3>
+          <div class="button-group">
+            <button
+              @click="toggleSpeaking"
+              class="speak-button"
+              :class="{ 'speak-button--stop': isSpeaking }"
+            >
+              {{ isSpeaking ? '停止朗读' : '朗读文本' }}
+            </button>
+            <button v-if="!isDictating" @click="startDictation" class="dictate-button">
+              开始听写
+            </button>
+            <button
+              v-else
+              @click="nextSentence"
+              class="dictate-button"
+              :disabled="!isCurrentSentenceComplete"
+            >
+              下一句
+            </button>
+            <button
+              v-if="isDictating"
+              @click="speakCurrentSentence"
+              class="repeat-button"
+              :disabled="isSpeaking"
+              title="重复播放当前句子 (Ctrl + ')"
+            >
+              <svg viewBox="0 0 24 24" class="repeat-icon">
+                <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" />
+              </svg>
+            </button>
+            <button @click="showSettings = true" class="settings-button" title="语音设置">
+              <svg viewBox="0 0 24 24" class="settings-icon">
+                <path
+                  d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div v-if="isDictating" class="dictation-section">
+          <div class="current-sentence">
+            <div
+              v-for="(word, index) in currentSentenceWords"
+              :key="index"
+              class="word-container"
+              :class="{ 'current-word': index === currentWordIndex }"
+            >
+              <div class="input-text" :class="{ correct: isWordCorrect(index) }">
+                {{ isPunctuation(word) ? word : userInput[index] || '' }}
+              </div>
+              <div class="underline" :style="{ width: word.length * 20 + 'px' }"></div>
             </div>
-            <div class="underline" :style="{ width: word.length * 20 + 'px' }"></div>
+          </div>
+          <div class="sentence-controls">
+            <div class="sentence-progress">
+              第 {{ currentSentenceIndex + 1 }} 句 / 共 {{ sentences.length }} 句
+              <div class="hint-text" v-if="isCurrentSentenceComplete">(按回车键进入下一句)</div>
+              <div class="hint-text">(按 Ctrl + ' 重复播放当前句子)</div>
+              <div class="hint-text">(按 Ctrl + ; 查看当前句子内容)</div>
+            </div>
           </div>
         </div>
-        <div class="sentence-controls">
-          <div class="sentence-progress">
-            第 {{ currentSentenceIndex + 1 }} 句 / 共 {{ sentences.length }} 句
-            <div class="hint-text" v-if="isCurrentSentenceComplete">(按回车键进入下一句)</div>
-            <div class="hint-text">(按 Ctrl + ' 重复播放当前句子)</div>
-            <div class="hint-text">(按 Ctrl + ; 查看当前句子内容)</div>
+        <div v-if="completedSentences.length > 0" class="completed-sentences">
+          <h4>已完成句子：</h4>
+          <div
+            v-for="(sentence, index) in completedSentences"
+            :key="index"
+            class="completed-sentence"
+          >
+            {{ sentence }}
           </div>
         </div>
+        <pre v-if="!isDictating" class="file-content">{{ fileContent }}</pre>
       </div>
-      <div v-if="completedSentences.length > 0" class="completed-sentences">
-        <h4>已完成句子：</h4>
-        <div
-          v-for="(sentence, index) in completedSentences"
-          :key="index"
-          class="completed-sentence"
-        >
-          {{ sentence }}
-        </div>
-      </div>
-      <pre v-if="!isDictating" class="file-content">{{ fileContent }}</pre>
     </div>
     <VoiceSettings
       v-model="showSettings"
@@ -103,6 +106,7 @@ import { ElMessage } from 'element-plus'
 import VoiceSettings from './VoiceSettings.vue'
 import SentencePreview from './SentencePreview.vue'
 import CongratulationsModal from './CongratulationsModal.vue'
+import CourseList from './CourseList.vue'
 
 const fileContent = ref('')
 const isSpeaking = ref(false)
@@ -389,6 +393,11 @@ const toggleSpeaking = () => {
   }
 }
 
+// 加载课程内容
+const loadCourseContent = (course) => {
+  fileContent.value = course.content
+}
+
 // 页面加载时
 onMounted(() => {
   stopSpeaking()
@@ -449,9 +458,17 @@ window.addEventListener('beforeunload', () => {
 
 <style scoped>
 .text-uploader {
-  max-width: 800px;
-  margin: 20px auto;
+  display: flex;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+}
+
+.content-wrapper {
+  flex: 1;
   padding: 20px;
+  overflow-y: auto;
 }
 
 .upload-section {
