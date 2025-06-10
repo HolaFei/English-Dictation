@@ -63,7 +63,7 @@
               :class="{ 'current-word': index === currentWordIndex }"
             >
               <div class="input-text" :class="{ correct: isWordCorrect(index) }">
-                {{ isPunctuation(word) && !hasHyphen(word) ? word : userInput[index] || '' }}
+                {{ isPunctuation(word) ? word : userInput[index] || '' }}
               </div>
               <div class="underline" :style="{ width: word.length * 20 + 'px' }"></div>
             </div>
@@ -184,19 +184,12 @@ const completedSentences = ref([])
 
 const currentSentenceWords = computed(() => {
   if (!sentences.value[currentSentenceIndex.value]) return []
-  return (
-    sentences.value[currentSentenceIndex.value].match(/\b\w+(?:[-'’]\w+)*\b|[.,!?;:'’"-]/g) || []
-  )
+  return sentences.value[currentSentenceIndex.value].match(/\b\w+(?:'\w+)?\b|[.,!?;:]/g) || []
 })
 
 // 检查是否是标点符号
 const isPunctuation = (word) => {
-  return /[.,!?;:'"‘’]/.test(word)
-}
-
-// 检查单词是否包含连字符
-const hasHyphen = (word) => {
-  return word.includes('-') || word.includes('’')
+  return /[.,!?;:]/.test(word)
 }
 
 // 检查当前句子是否完成
@@ -475,8 +468,8 @@ const replaySentence = (sentence) => {
 
 // 将句子分割成单词
 const splitSentence = (sentence) => {
-  // 使用正则表达式匹配单词和标点符号，包括单引号和连字符
-  return sentence.match(/\b\w+(?:[-'’]\w+)*\b|[.,!?;:'"-]/g) || []
+  // 使用正则表达式匹配单词和标点符号
+  return sentence.match(/\b\w+(?:'\w+)?\b|[.,!?;:]/g) || []
 }
 
 // 朗读单个单词
