@@ -182,9 +182,22 @@ const userInput = ref([])
 const currentWordIndex = ref(0)
 const completedSentences = ref([])
 
+// 计算当前句子的单词数组
 const currentSentenceWords = computed(() => {
+  // 如果当前句子不存在，返回空数组
   if (!sentences.value[currentSentenceIndex.value]) return []
-  return sentences.value[currentSentenceIndex.value].match(/\b\w+(?:'\w+)?\b|[.,!?;:]/g) || []
+
+  // 使用正则表达式匹配句子中的单词和标点符号
+  // 正则表达式 /\b\w+(?:['’]\w+)?\b|[.,!?;:]/g 的含义：
+  // \b\w+ 匹配单词边界后的一个或多个字母、数字或下划线
+  // (?:['’]\w+)? 匹配可选的英文单引号(')或中文单引号(’)后跟一个或多个字符，如 "don't" 或 "don’t" 中的 "'t"
+  // \b 匹配单词边界
+  // | 表示"或者"
+  // [.,!?;:] 匹配任何一个标点符号(句号、逗号、感叹号、问号、分号、冒号)
+  // g 全局匹配标志，查找所有匹配项
+  // 这个正则表达式会将句子分割成单词和标点符号的数组，例如：
+  // "Hello, world!" 会被分割成 ["Hello", ",", "world", "!"]
+  return sentences.value[currentSentenceIndex.value].match(/\b\w+(?:['’]\w+)?\b|[.,!?;:]/g) || []
 })
 
 // 检查是否是标点符号
@@ -199,7 +212,7 @@ const isCurrentSentenceComplete = computed(() => {
     // 如果是标点符号，直接返回true
     if (isPunctuation(word)) return true
     // 对于单词，不区分大小写进行比较
-    return userInput.value[index]?.toLowerCase() === word.toLowerCase()
+    return userInput.value[index]?.toLowerCase() === word.toLowerCase().replace(/’/g, "'")
   })
 })
 
@@ -210,7 +223,7 @@ const isWordCorrect = (index) => {
   if (isPunctuation(word)) return true
   // 对于单词，不区分大小写进行比较
   const input = userInput.value[index] || ''
-  return input.toLowerCase() === word.toLowerCase()
+  return input.toLowerCase() === word.toLowerCase().replace(/’/g, "'")
 }
 
 // 创建打字音效
@@ -265,6 +278,7 @@ const currentSentence = computed(() => {
 
 // 处理键盘输入
 const handleKeyPress = (event) => {
+  console.log('handleKeyPress', event.key, isDictating.value, isCurrentSentenceComplete.value)
   if (!isDictating.value) return
 
   // 如果当前句子已完成，按回车键进入下一句
@@ -344,9 +358,15 @@ const handleKeyPress = (event) => {
 // 开始听写
 const startDictation = () => {
   // 使用正则表达式匹配句子，保留标点符号
-  sentences.value =
-    fileContent.value.match(/[^.!?。！？]+[.!?。！？]/g) ||
-    [].map((s) => s.trim()).filter((s) => s.length > 0)
+  // 使用正则表达式将文本内容分割成句子
+  // 正则表达式 /[^.!?。！？]+[.!?。！？]/g 的含义：
+  // [^.!?。！？]+ 匹配一个或多个不是句号、感叹号、问号（包括中英文）的字符
+  // [.!?。！？] 匹配一个句号、感叹号或问号（包括中英文）
+  // g 表示全局匹配
+  // 如果正则匹配失败，则使用空数组作为备选，并确保每个句子都经过trim()处理且长度大于0
+  sentences.value = (fileContent.value.match(/[^.!?。！？]+[.!?。！？]/g) || [])
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0)
 
   currentSentenceIndex.value = 0
   currentWordIndex.value = 0
@@ -469,7 +489,7 @@ const replaySentence = (sentence) => {
 // 将句子分割成单词
 const splitSentence = (sentence) => {
   // 使用正则表达式匹配单词和标点符号
-  return sentence.match(/\b\w+(?:'\w+)?\b|[.,!?;:]/g) || []
+  return sentence.match(/\b\w+(?:['’]\w+)?\b|[.,!?;:]/g) || []
 }
 
 // 朗读单个单词
